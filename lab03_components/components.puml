@@ -1,0 +1,169 @@
+@startuml
+' Лабораторна робота №3. Частина 2. Діаграма компонентів
+' Предметна область: веб-сервіс завантаження та читання книг «Полиця»
+' Камінський Олексій Дмитрович, група ВТ-23-2
+' Принцип декомпозиції: один компонент — одна бізнес-можливість
+
+left to right direction
+
+skinparam defaultFontName "Helvetica"
+skinparam shadowing false
+skinparam legendBackgroundColor #FFFFFF
+skinparam legendBorderColor #9AB3C6
+skinparam ArrowFontSize 10
+skinparam componentStyle uml2
+skinparam nodesep 28
+skinparam ranksep 70
+skinparam component {
+  BackgroundColor #FEFEFE
+  BorderColor #33668E
+  ArrowColor #33668E
+  FontColor #000000
+}
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #33668E
+}
+skinparam database {
+  BackgroundColor #EDF3EE
+  BorderColor #4C7A54
+}
+
+' ======== КЛІЄНТСЬКИЙ РІВЕНЬ ========
+component "Веб-читалка (SPA)" <<клієнт>> as WebApp #E8F0F7
+
+' ======== СЕРВЕРНИЙ РІВЕНЬ ЗАСТОСУНКУ «ПОЛИЦЯ» ========
+interface "IПублічнийAPI" as IPublicAPI
+component "API-шлюз" as Gateway
+
+interface "IАвтентифікація" as IAuth
+interface "IКаталог" as ICatalog
+interface "IБібліотека" as ILibrary
+interface "IЗавантаження" as IIngest
+interface "IПідписка" as ISubscription
+interface "IМодерація" as IModeration
+interface "IПереклад" as ITranslate
+interface "IПлатіжнийВебхук" as IPayHook
+
+component "Сервіс акаунтів\nі доступу" as Accounts
+component "Сервіс каталогу" as Catalog
+component "Сервіс бібліотеки\nчитача" as Library
+component "Сервіс завантаження\nй обробки книг" as Ingest
+component "Сервіс підписок\nі платежів" as Billing
+component "Сервіс модерації" as Moderation
+component "Модуль перекладу" as Translate
+component "Планувальник\nавтопродовження" as Scheduler
+component "Сервіс журналювання\nта спостережуваності" as Logging
+
+interface "IЖурнал" as ILog
+interface "IПарсерФормату" as IParser
+interface "IСповіщення" as INotify
+component "Модуль парсерів\nформатів" as Parsers
+component "Сервіс сповіщень" as Notify
+
+' ======== ЗОВНІШНІ СИСТЕМИ ========
+interface "IOAuthGoogle" as IOAuth
+interface "IСховищеФайлів" as IFileStore
+interface "IПлатіжнийШлюз" as IPayGw
+interface "IСловник" as IDict
+interface "IEmailДоставка" as IMail
+
+component "Сервіс авторизації\nGoogle OAuth" <<зовнішня система>> as GoogleOAuth #F7EFE4
+component "Обʼєктне сховище\nфайлів (S3)" <<зовнішня система>> as S3 #F7EFE4
+component "Платіжна система" <<зовнішня система>> as PaySystem #F7EFE4
+component "Сервіс перекладу\nта словник" <<зовнішня система>> as DictAPI #F7EFE4
+component "Сервіс email-сповіщень" <<зовнішня система>> as MailGw #F7EFE4
+
+' ======== СХОВИЩА ДАНИХ ========
+database "БД «Полиця»\n(PostgreSQL)" as DB
+database "Кеш і черга завдань\n(Redis)" as Cache
+
+' ====================================================================
+'  ЗʼЄДНАННЯ «ЛЬОДЯНИК-РОЗЕТКА» (ball-and-socket)
+'  Споживач --( Інтерфейс   — необхідний інтерфейс (розетка, півколо)
+'  Інтерфейс - Постачальник — наданий інтерфейс (льодяник, кружечок)
+' ====================================================================
+
+WebApp --( IPublicAPI
+IPublicAPI - Gateway
+
+Gateway --( IAuth
+IAuth - Accounts
+
+Gateway --( ICatalog
+ICatalog - Catalog
+
+Gateway --( ILibrary
+ILibrary - Library
+
+Gateway --( IIngest
+IIngest - Ingest
+
+Gateway --( ISubscription
+ISubscription - Billing
+
+Gateway --( IModeration
+IModeration - Moderation
+
+Gateway --( ITranslate
+ITranslate - Translate
+
+Ingest --( IParser
+IParser - Parsers
+
+Accounts --( INotify
+Billing --( INotify
+Moderation --( INotify
+INotify - Notify
+
+Gateway --( ILog
+Ingest --( ILog
+Billing --( ILog
+ILog - Logging
+
+Library --( ICatalog
+Library --( IFileStore
+Ingest --( IModeration
+Ingest --( IFileStore
+Scheduler --( ISubscription
+
+Accounts --( IOAuth
+IOAuth - GoogleOAuth
+
+IFileStore - S3
+
+Billing --( IPayGw
+IPayGw - PaySystem
+
+' Єдиний інтерфейс, який надає НАША сторона, а потребує ЗОВНІШНЯ система:
+' асинхронне підтвердження списання (вебхук POST /api/payments/callback).
+IPayHook - Gateway
+PaySystem --( IPayHook
+
+Translate --( IDict
+IDict - DictAPI
+
+Notify --( IMail
+IMail - MailGw
+
+' ======== ЗАЛЕЖНОСТІ ВІД СХОВИЩ ДАНИХ (dependency) ========
+Accounts ..> DB : <<use>>
+Catalog ..> DB
+Library ..> DB
+Billing ..> DB
+Moderation ..> DB
+Accounts ..> Cache : <<use>>
+Ingest ..> Cache : <<use>>
+Notify ..> Cache
+Translate ..> Cache
+
+legend right
+  |= Позначення |= Зміст |
+  | суцільна лінія, що завершується кружечком | наданий інтерфейс (provided, «льодяник») |
+  | суцільна лінія, що завершується півколом навколо кружечка | необхідний інтерфейс (required, «розетка») |
+  | пунктирна стрілка | залежність (dependency) |
+  | бежева заливка компонента | зовнішня система (поза межами розробки) |
+  | блакитна заливка компонента | клієнтський рівень |
+  | зелений циліндр | сховище даних (БД, кеш) |
+endlegend
+@enduml

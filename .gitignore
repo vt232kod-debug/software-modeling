@@ -1,0 +1,4 @@
+.DS_Store
+materials/
+__pycache__/
+*_files/

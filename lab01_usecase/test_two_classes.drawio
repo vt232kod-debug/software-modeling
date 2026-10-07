@@ -1,0 +1,49 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram name="Тестова діаграма" id="test-two-classes">
+    <mxGraphModel dx="900" dy="700" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="cls1" value="Читач" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;fontFamily=Helvetica;fillColor=#FEFEFE;strokeColor=#33668E;" vertex="1" parent="1">
+          <mxGeometry x="80" y="60" width="280" height="116" as="geometry" />
+        </mxCell>
+        <mxCell id="cls1a1" value="- email: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;" vertex="1" parent="cls1">
+          <mxGeometry y="30" width="280" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cls1a2" value="- імʼя: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;" vertex="1" parent="cls1">
+          <mxGeometry y="56" width="280" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cls1div" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#33668E;" vertex="1" parent="cls1">
+          <mxGeometry y="82" width="280" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="cls1m1" value="+ увійти(пароль: String): boolean" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;" vertex="1" parent="cls1">
+          <mxGeometry y="90" width="280" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cls2" value="Книга" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;fontFamily=Helvetica;fillColor=#FEFEFE;strokeColor=#33668E;" vertex="1" parent="1">
+          <mxGeometry x="80" y="320" width="280" height="116" as="geometry" />
+        </mxCell>
+        <mxCell id="cls2a1" value="- назва: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;" vertex="1" parent="cls2">
+          <mxGeometry y="30" width="280" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cls2a2" value="- автор: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;" vertex="1" parent="cls2">
+          <mxGeometry y="56" width="280" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cls2div" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#33668E;" vertex="1" parent="cls2">
+          <mxGeometry y="82" width="280" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="cls2m1" value="+ отриматиОбсяг(): int" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;" vertex="1" parent="cls2">
+          <mxGeometry y="90" width="280" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="assoc" value="читає" style="endArrow=none;html=1;rounded=0;fontFamily=Helvetica;strokeColor=#33668E;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="cls1" target="cls2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="assocSrc" value="0..*" style="edgeLabel;html=1;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;" vertex="1" connectable="0" parent="assoc">
+          <mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint x="14" y="0" as="offset" /></mxGeometry>
+        </mxCell>
+        <mxCell id="assocTgt" value="0..*" style="edgeLabel;html=1;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;" vertex="1" connectable="0" parent="assoc">
+          <mxGeometry x="0.6" relative="1" as="geometry"><mxPoint x="14" y="0" as="offset" /></mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

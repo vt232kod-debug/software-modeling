@@ -1,0 +1,56 @@
+@startuml
+' Лабораторна робота №1. Фрагмент 2 діаграми варіантів використання:
+' «Підписка, модерація та адміністрування»
+' Предметна область: веб-сервіс завантаження та читання книг «Полиця»
+' Камінський Олексій Дмитрович, група ВТ-23-2
+
+skinparam defaultFontName "Helvetica"
+skinparam shadowing false
+skinparam nodesep 12
+skinparam ranksep 90
+skinparam packageStyle rectangle
+skinparam ArrowFontSize 11
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #33668E
+}
+skinparam actor {
+  BorderColor #33668E
+}
+left to right direction
+
+actor "Зареєстрований читач" as Reader
+actor "Модератор контенту" as Moderator
+actor "Адміністратор системи" as Admin
+actor "Планувальник завдань" as Scheduler <<таймер>>
+actor "Платіжна система" as PaySys <<зовнішня система>>
+actor "Сервіс email-сповіщень" as Mailer <<зовнішня система>>
+
+rectangle "Веб-сервіс читання книг «Полиця» (фрагмент 2)" {
+  usecase "UC17\nОформити підписку" as UC17
+  usecase "UC18\nПровести платіж" as UC18
+  usecase "UC19\nЗастосувати промокод" as UC19
+  usecase "UC20\nПродовжити підписку автоматично" as UC20
+  usecase "UC21\nСкасувати підписку" as UC21
+  usecase "UC22\nПоскаржитися на контент" as UC22
+  usecase "UC23\nМодерувати завантажену книгу" as UC23
+  usecase "UC25\nКерувати тарифними планами" as UC25
+}
+
+Reader -- UC17
+Reader -- UC18
+Reader -- UC19
+Reader -- UC21
+Reader -- UC22
+
+Moderator -- UC23
+Admin -- UC25
+Scheduler -- UC20
+
+UC18 -- PaySys
+UC23 -- Mailer
+
+UC17 ..> UC18 : <<include>>
+UC20 ..> UC18 : <<include>>
+UC19 ..> UC17 : <<extend>>
+@enduml

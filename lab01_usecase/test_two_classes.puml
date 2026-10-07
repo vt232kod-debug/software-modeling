@@ -1,0 +1,23 @@
+@startuml
+' Тестова діаграма для перевірки налаштування середовища PlantUML
+' Лабораторна робота №1. Камінський Олексій Дмитрович, група ВТ-23-2
+' Два класи з одним відношенням (асоціація «багато до багатьох»)
+
+skinparam defaultFontName "Helvetica"
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+class Читач {
+  - email: String
+  - імʼя: String
+  + увійти(пароль: String): boolean
+}
+
+class Книга {
+  - назва: String
+  - автор: String
+  + отриматиОбсяг(): int
+}
+
+Читач "0..*" -- "0..*" Книга : читає >
+@enduml

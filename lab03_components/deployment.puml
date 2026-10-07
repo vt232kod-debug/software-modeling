@@ -1,0 +1,157 @@
+@startuml
+' Лабораторна робота №3. Частина 3. Діаграма розгортання
+' Предметна область: веб-сервіс завантаження та читання книг «Полиця»
+' Камінський Олексій Дмитрович, група ВТ-23-2
+
+skinparam defaultFontName "Helvetica"
+skinparam shadowing false
+skinparam ArrowFontSize 10
+skinparam nodesep 25
+skinparam ranksep 45
+skinparam node {
+  BackgroundColor #FEFEFE
+  BorderColor #33668E
+  ArrowColor #33668E
+}
+skinparam artifact {
+  BackgroundColor #F7FAFC
+  BorderColor #9AB3C6
+}
+skinparam legendBackgroundColor #FFFFFF
+skinparam legendBorderColor #9AB3C6
+
+' ======================== КЛІЄНТСЬКИЙ ВУЗОЛ ========================
+node "Пристрій читача\n(ПК, смартфон, планшет)" <<device>> as ClientDevice #E8F0F7 {
+  node "Браузер (Chrome 141 / Safari 19)" <<execution environment>> as Browser {
+    artifact "polytsia-reader.bundle.js" as ArtReader
+    artifact "sw-offline.js\n(service worker)" as ArtSW
+    artifact "reader-cache\n(IndexedDB)" as ArtIDB
+  }
+}
+
+' ======================== ЕДЖ ТА ВЕБ-СЕРВЕР ========================
+node "Edge-вузол CDN" <<device>> as CdnNode {
+  artifact "static/\n(index.html, *.css, шрифти)" as ArtStatic
+}
+
+node "Веб-сервер\n(Nginx 1.27, Ubuntu 24.04 LTS)" <<device>> as WebNode {
+  artifact "nginx.conf\n(reverse proxy, TLS termination)" as ArtNginx
+  artifact "fullchain.pem\n(TLS-сертифікат)" as ArtCert
+}
+
+' ==================== СЕРВЕР ЗАСТОСУНКІВ ====================
+node "Сервер застосунків\n(Docker-хост, Ubuntu 24.04 LTS)" <<device>> as AppNode {
+
+  node "Контейнер polytsia-gateway" <<container>> as CtGateway {
+    artifact "polytsia-gateway.jar" as ArtGateway
+    artifact "application.yml" as ArtConfig
+  }
+
+  node "Контейнер polytsia-core" <<container>> as CtCore {
+    artifact "accounts-service.jar" as ArtAccounts
+    artifact "catalog-service.jar" as ArtCatalog
+    artifact "library-service.jar" as ArtLibrary
+    artifact "billing-service.jar" as ArtBilling
+    artifact "moderation-service.jar" as ArtModeration
+    artifact "translate-service.jar" as ArtTranslate
+  }
+
+  node "Контейнер polytsia-ingest" <<container>> as CtIngest {
+    artifact "ingest-worker.jar" as ArtIngest
+    artifact "format-parsers.jar\n(EPUB + PDF)" as ArtParsers
+  }
+
+  node "Контейнер polytsia-jobs" <<container>> as CtJobs {
+    artifact "notify-worker.jar" as ArtNotify
+    artifact "scheduler.jar\n(автопродовження підписки)" as ArtScheduler
+    artifact "logging-agent.jar" as ArtLogging
+    artifact "incidents.log" as ArtIncidents
+  }
+}
+
+' ======================== СХОВИЩА ДАНИХ ========================
+node "Сервер бази даних\n(PostgreSQL 16)" <<device>> as DbNode #EDF3EE {
+  artifact "polytsia_db\n(схема користувачів, каталогу,\nпідписок, модерації)" as ArtDb
+  artifact "schema_v12.sql" as ArtSchema
+}
+
+node "Сервер кешу та черги\n(Redis 7)" <<device>> as CacheNode #EDF3EE {
+  artifact "sessions\n(сесії та токени доступу)" as ArtSessions
+  artifact "ingest-queue\n(черга обробки книг)" as ArtQueue
+  artifact "notify-queue\n(черга листів читачам)" as ArtNotifyQueue
+  artifact "dict-cache\n(кеш словникових статей)" as ArtDictCache
+}
+
+' ======================== ЗОВНІШНІ СИСТЕМИ ========================
+node "Обʼєктне сховище файлів\n(S3-сумісне)" <<зовнішня система>> as S3Node #F7EFE4 {
+  artifact "bucket polytsia-books/\n{uuid}/*.epub, *.pdf" as ArtBucket
+}
+
+node "Платіжна система" <<зовнішня система>> as PayNode #F7EFE4 {
+  artifact "payments-api v3" as ArtPayApi
+}
+
+node "Сервіс авторизації\nGoogle OAuth" <<зовнішня система>> as GoogleNode #F7EFE4 {
+  artifact "oauth2/v2 endpoint" as ArtOAuthApi
+}
+
+node "Сервіс перекладу\nта словник" <<зовнішня система>> as DictNode #F7EFE4 {
+  artifact "dictionary-api v1" as ArtDictApi
+}
+
+node "Сервіс email-сповіщень" <<зовнішня система>> as MailNode #F7EFE4 {
+  artifact "smtp-relay" as ArtSmtp
+}
+
+' ================= ШЛЯХИ КОМУНІКАЦІЇ З ПРОТОКОЛАМИ =================
+ClientDevice -down- CdnNode : "HTTPS / TLS 1.3, HTTP/2\n(статика)"
+ClientDevice -down- WebNode : "HTTPS / TLS 1.3,\nREST/JSON (443)"
+ClientDevice -- S3Node : "HTTPS, підписане посилання S3\n(GET, дійсне 15 хв)"
+CdnNode -- WebNode : "HTTPS, origin pull\n(наповнення кешу статики)"
+
+WebNode -down- AppNode : "HTTP/1.1, 10.0.0.12:8080\n(reverse proxy, приватна мережа)"
+PayNode -- WebNode : "HTTPS webhook\n(POST /api/payments/callback)"
+
+AppNode -down- DbNode : "TCP/5432, PostgreSQL\nwire protocol + TLS"
+AppNode -down- CacheNode : "TCP/6379,\nRESP + TLS"
+AppNode -down- S3Node : "HTTPS, S3 API\n(PUT / GET, 443)"
+AppNode -down- PayNode : "HTTPS,\nREST/JSON (443)"
+AppNode -down- GoogleNode : "HTTPS, OpenID Connect\n/ OAuth 2.0 (443)"
+AppNode -down- DictNode : "HTTPS,\nREST/JSON (443)"
+AppNode -down- MailNode : "SMTP, TCP/587\n(STARTTLS)"
+
+' ======== ПРИХОВАНІ ЗВʼЯЗКИ ДЛЯ КОМПАКТНОЇ РОЗКЛАДКИ ========
+' (не є елементами UML — лише підказки розкладки для Graphviz).
+' Підказки між вузлами задаються через артефакти: Graphviz ранжує
+' вузли всередині різних кластерів, але не самі кластери.
+ArtAccounts -[hidden]down- ArtBilling
+ArtCatalog -[hidden]down- ArtModeration
+ArtLibrary -[hidden]down- ArtTranslate
+CtGateway -[hidden]down- CtIngest
+CtCore -[hidden]down- CtJobs
+
+ArtLogging -[hidden]right- ArtIncidents
+ArtSessions -[hidden]right- ArtQueue
+ArtQueue -[hidden]right- ArtNotifyQueue
+ArtNotifyQueue -[hidden]right- ArtDictCache
+
+ArtReader -[hidden]down- ArtStatic
+ArtReader -[hidden]down- ArtNginx
+ArtNginx -[hidden]down- ArtGateway
+ArtScheduler -[hidden]down- ArtDb
+ArtScheduler -[hidden]down- ArtSessions
+ArtScheduler -[hidden]down- ArtBucket
+ArtScheduler -[hidden]down- ArtPayApi
+ArtDb -[hidden]down- ArtOAuthApi
+ArtSessions -[hidden]down- ArtDictApi
+ArtBucket -[hidden]down- ArtSmtp
+
+legend right
+  |= Позначення |= Зміст |
+  | <<device>> | фізичний або віртуальний обчислювальний вузол |
+  | <<container>> | Docker-контейнер, вкладений у вузол |
+  | <<зовнішня система>> | вузол поза межами нашої розробки |
+  | прямокутник усередині вузла | артефакт — конкретний розгорнутий файл чи образ |
+  | підпис на лінії | шлях комунікації із зазначенням протоколу і порту |
+endlegend
+@enduml

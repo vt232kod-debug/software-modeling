@@ -1,0 +1,121 @@
+@startuml
+' Лабораторна робота №1. Діаграма варіантів використання (Use Case diagram)
+' Предметна область: веб-сервіс завантаження та читання книг «Полиця»
+' Камінський Олексій Дмитрович, група ВТ-23-2
+
+skinparam defaultFontName "Helvetica"
+skinparam shadowing false
+skinparam nodesep 12
+skinparam ranksep 90
+skinparam packageStyle rectangle
+skinparam ArrowFontSize 11
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #33668E
+}
+skinparam actor {
+  BorderColor #33668E
+}
+left to right direction
+
+' ======== АКТОРИ-ЛЮДИ (ліворуч від межі системи) ========
+actor "Користувач системи" as User <<абстрактний>>
+actor "Гість" as Guest
+actor "Зареєстрований читач" as Reader
+actor "Модератор контенту" as Moderator
+actor "Адміністратор системи" as Admin
+
+' ======== ЗОВНІШНІ СИСТЕМИ ТА ЧАСОВИЙ АКТОР (праворуч від межі системи) ========
+actor "Сервіс авторизації\nGoogle OAuth" as OAuth <<зовнішня система>>
+actor "Платіжна система" as PaySys <<зовнішня система>>
+actor "Обʼєктне сховище файлів" as Storage <<зовнішня система>>
+actor "Сервіс перекладу\nта словник" as Translate <<зовнішня система>>
+actor "Сервіс email-сповіщень" as Mailer <<зовнішня система>>
+actor "Планувальник завдань" as Scheduler <<таймер>>
+
+' ======== УЗАГАЛЬНЕННЯ АКТОРІВ (generalization) ========
+User <|-- Guest
+User <|-- Reader
+
+' ======== МЕЖА СИСТЕМИ ========
+rectangle "Веб-сервіс читання книг «Полиця»" {
+
+  ' --- доступ до системи ---
+  usecase "UC01\nЗареєструватися в системі" as UC01
+  usecase "UC02\nУвійти в систему" as UC02
+  usecase "UC03\nУвійти за логіном і паролем" as UC03
+  usecase "UC04\nУвійти через Google OAuth" as UC04
+
+  ' --- каталог ---
+  usecase "UC05\nПереглянути каталог книг" as UC05
+  usecase "UC06\nШукати книгу за фільтрами" as UC06
+
+  ' --- читання ---
+  usecase "UC07\nЧитати книгу у вбудованій читалці" as UC07
+  usecase "UC10\nСтворити закладку або нотатку" as UC10
+  usecase "UC11\nПерекласти виділене слово" as UC11
+  usecase "UC12\nЗавантажити книгу для офлайн-читання" as UC12
+
+  ' --- власний контент ---
+  usecase "UC13\nКерувати власною колекцією" as UC13
+  usecase "UC14\nЗавантажити власну книгу" as UC14
+
+  ' --- підписка та оплата ---
+  usecase "UC17\nОформити підписку" as UC17
+  usecase "UC18\nПровести платіж" as UC18
+  usecase "UC19\nЗастосувати промокод" as UC19
+  usecase "UC20\nПродовжити підписку автоматично" as UC20
+  usecase "UC21\nСкасувати підписку" as UC21
+
+  ' --- модерація та адміністрування ---
+  usecase "UC22\nПоскаржитися на контент" as UC22
+  usecase "UC23\nМодерувати завантажену книгу" as UC23
+  usecase "UC25\nКерувати тарифними планами" as UC25
+}
+
+' ======== АСОЦІАЦІЇ АКТОРІВ-ЛЮДЕЙ (проста лінія, без напрямку) ========
+User -- UC05
+User -- UC06
+
+Guest -- UC01
+Guest -- UC02
+
+Reader -- UC07
+Reader -- UC10
+Reader -- UC11
+Reader -- UC12
+Reader -- UC13
+Reader -- UC14
+Reader -- UC17
+Reader -- UC18
+Reader -- UC19
+Reader -- UC21
+Reader -- UC22
+
+Moderator -- UC23
+Admin -- UC25
+Scheduler -- UC20
+
+' ======== АСОЦІАЦІЇ ЗОВНІШНІХ СИСТЕМ (другорядні актори) ========
+UC01 -- Mailer
+UC04 -- OAuth
+UC07 -- Storage
+UC11 -- Translate
+UC12 -- Storage
+UC14 -- Storage
+UC18 -- PaySys
+UC23 -- Mailer
+
+' ======== УЗАГАЛЬНЕННЯ ВАРІАНТІВ ВИКОРИСТАННЯ (generalization) ========
+UC02 <|-- UC03
+UC02 <|-- UC04
+
+' ======== ВІДНОШЕННЯ <<include>> (від базового до включеного) ========
+UC17 ..> UC18 : <<include>>
+UC20 ..> UC18 : <<include>>
+
+' ======== ВІДНОШЕННЯ <<extend>> (від розширювального до базового) ========
+UC10 ..> UC07 : <<extend>>
+UC11 ..> UC07 : <<extend>>
+UC19 ..> UC17 : <<extend>>
+@enduml

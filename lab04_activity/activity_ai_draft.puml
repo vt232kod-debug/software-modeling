@@ -1,0 +1,46 @@
+@startuml
+' ЧЕРНЕТКА, ЗГЕНЕРОВАНА ШІ (перший прохід, ДО ручного виправлення).
+' Файл збережено НАВМИСНО з усіма хибами — він потрібен лише для розділу
+' «Критичний аналіз ШІ-чернетки» звіту і НЕ є результатом лабораторної роботи.
+' Камінський Олексій Дмитрович, група ВТ-23-2
+
+skinparam defaultFontName "Helvetica"
+skinparam shadowing false
+skinparam ArrowFontSize 11
+skinparam activity {
+  BackgroundColor #FDF2F2
+  BorderColor #B03A2E
+  ArrowColor #B03A2E
+  DiamondBackgroundColor #FDF2F2
+  DiamondBorderColor #B03A2E
+  StartColor #B03A2E
+  EndColor #B03A2E
+  BarColor #B03A2E
+}
+skinparam swimlane {
+  BorderColor #D5A6A0
+  TitleFontSize 13
+}
+
+|Читач|
+start
+:Відкрити сторінку завантаження книги;
+:Натиснути кнопку «Огляд»;
+:Вибрати файл на диску;
+:Натиснути кнопку «Завантажити»;
+
+|Система|
+:Валідація файлу;
+:Збереження файлу;
+:Модерація;
+fork
+  :Опублікувати книгу в каталозі;
+fork again
+  :Позначити книгу як «Відхилено»;
+end fork
+:Відправка email;
+
+|Читач|
+:Отримати email;
+stop
+@enduml
