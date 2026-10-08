@@ -1,24 +1,27 @@
 @startuml
 ' Лабораторна робота №3. Частина 2. Діаграма компонентів
-' Предметна область: веб-сервіс завантаження та читання книг «Полиця»
+' Предметна область: «Півот» — вебсервіс і браузерне розширення
+' для вивчення іноземної мови на основі власного контенту користувача
 ' Камінський Олексій Дмитрович, група ВТ-23-2
-' Принцип декомпозиції: один компонент — одна бізнес-можливість
-
-left to right direction
+' Принцип декомпозиції: один компонент — одна бізнес-можливість.
+' Угода про напрямок: провайдер завжди знизу («-up-» до кружечка),
+' споживач завжди зверху («-down-(» до того самого кружечка).
+' Єдиний виняток — IМістокДоРозширення: там провайдер (розширення) за
+' змістом стоїть ВИЩЕ споживача (вебсторінка), бо потік «людина → клієнт →
+' сервер» на діаграмі йде вниз. Семантика від цього не змінюється: плоска
+' лінія «--» завжди у провайдера, півколо «-(» завжди у споживача.
 
 skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 14
 skinparam shadowing false
-skinparam legendBackgroundColor #FFFFFF
-skinparam legendBorderColor #9AB3C6
-skinparam ArrowFontSize 10
 skinparam componentStyle uml2
-skinparam nodesep 28
-skinparam ranksep 70
+skinparam nodesep 20
+skinparam ranksep 50
+skinparam ArrowFontSize 12
 skinparam component {
   BackgroundColor #FEFEFE
   BorderColor #33668E
   ArrowColor #33668E
-  FontColor #000000
 }
 skinparam interface {
   BackgroundColor #FFFFFF
@@ -28,142 +31,162 @@ skinparam database {
   BackgroundColor #EDF3EE
   BorderColor #4C7A54
 }
+skinparam cloud {
+  BackgroundColor #FBF4E8
+  BorderColor #B07A28
+}
+skinparam package {
+  BackgroundColor #F7FAFC
+  BorderColor #9AB3C6
+  FontStyle bold
+}
 
-' ======== КЛІЄНТСЬКИЙ РІВЕНЬ ========
-component "Веб-читалка (SPA)" <<клієнт>> as WebApp #E8F0F7
+actor "Зареєстрований\nкористувач" as Reg
+actor "Гість" as Guest
 
-' ======== СЕРВЕРНИЙ РІВЕНЬ ЗАСТОСУНКУ «ПОЛИЦЯ» ========
-interface "IПублічнийAPI" as IPublicAPI
-component "API-шлюз" as Gateway
+' =====================================================================
+' КЛІЄНТСЬКА ЧАСТИНА — браузерне розширення
+' =====================================================================
+package "КЛІЄНТСЬКА ЧАСТИНА: браузерне розширення (Chrome, Manifest V3)" as CLIENT {
+  component "1. Оверлей розширення\n<<службовий воркер + світ сторінки>>" as Overlay #E8F0F7
+  component "2. Адаптер платформи YouTube" as YT #E8F0F7
+  database "Локальне сховище браузера" as Local
+}
 
+' =====================================================================
+' СЕРВЕРНА ЧАСТИНА — вебзастосунок pivotsubs.com
+' =====================================================================
+package "СЕРВЕРНА ЧАСТИНА: вебзастосунок pivotsubs.com" as SERVER {
+  package "Рівень подання та доступу" as L1 {
+    component "3. Веб-інтерфейс" as Web #F3EFF8
+    component "4. API сервісу\nта контроль доступу" as API #F3EFF8
+  }
+  package "Доменні модулі" as L2 {
+    component "5. Тарифи й ліміти" as Plans #F3EFF8
+    component "6. Модуль навчання" as Learn #F3EFF8
+    component "7. Модуль контенту" as Content #F3EFF8
+  }
+  package "Шар інтеграцій" as L3 {
+    component "8. Шар зовнішніх сервісів" as ExtLayer #F3EFF8
+  }
+}
+
+database "Сховище даних\nPostgreSQL 17 + pgvector" as DB
+
+cloud "Зовнішні системи" as Cloud {
+  component "Сервіс субтитрів\nYouTube" as CloudYT
+  component "Сервіс ШІ,\nсервіс перекладу" as CloudAI
+  component "Платіжний провайдер,\nпоштовий сервіс" as CloudPay
+  component "Провайдер авторизації\n(Google OAuth)" as CloudOAuth
+}
+
+' ===================== ІНТЕРФЕЙСИ =====================
+interface "IПоказСубтитрів" as IShow
+interface "IКарткаСлова" as ICard
+interface "IЕкраниКористувача" as IScreens
+interface "IДжерелоСубтитрів" as ISub
+interface "IЛокальнеСховище" as ILocal
+interface "IМістокДоРозширення" as IBridge
+interface "IApiСервісу" as IApi
 interface "IАвтентифікація" as IAuth
-interface "IКаталог" as ICatalog
-interface "IБібліотека" as ILibrary
-interface "IЗавантаження" as IIngest
-interface "IПідписка" as ISubscription
-interface "IМодерація" as IModeration
+interface "IТарифиЛіміти" as ILimits
+interface "IНавчання" as ILearn
+interface "IКонтент" as IContent
+interface "IШІ" as IAI
 interface "IПереклад" as ITranslate
-interface "IПлатіжнийВебхук" as IPayHook
+interface "IПошта" as IMail
+interface "IПлатіжнийПровайдер" as IPay
+interface "IСховищеДаних" as IStore
+interface "IПровайдерАвторизації" as IOAuth
+interface "IПублічніСторінки" as IPublic
 
-component "Сервіс акаунтів\nі доступу" as Accounts
-component "Сервіс каталогу" as Catalog
-component "Сервіс бібліотеки\nчитача" as Library
-component "Сервіс завантаження\nй обробки книг" as Ingest
-component "Сервіс підписок\nі платежів" as Billing
-component "Сервіс модерації" as Moderation
-component "Модуль перекладу" as Translate
-component "Планувальник\nавтопродовження" as Scheduler
-component "Сервіс журналювання\nта спостережуваності" as Logging
+' ---- надані інтерфейси «назовні», до людини ----
+Overlay -up- IShow
+Overlay -up- ICard
+Web -up- IScreens
+Web -up- IPublic
+Reg -down-( IShow
+Reg -down-( ICard
+Reg -down-( IScreens
+Guest -down-( IPublic
 
-interface "IЖурнал" as ILog
-interface "IПарсерФормату" as IParser
-interface "IСповіщення" as INotify
-component "Модуль парсерів\nформатів" as Parsers
-component "Сервіс сповіщень" as Notify
+' ---- клієнтська частина ----
+YT -up- ISub
+Overlay -down-( ISub
+Local -up- ILocal
+Overlay -down-( ILocal
 
-' ======== ЗОВНІШНІ СИСТЕМИ ========
-interface "IOAuthGoogle" as IOAuth
-interface "IСховищеФайлів" as IFileStore
-interface "IПлатіжнийШлюз" as IPayGw
-interface "IСловник" as IDict
-interface "IEmailДоставка" as IMail
+' ---- місток «вебсторінка — розширення» ----
+' Приймач повідомлень оголошує саме розширення
+' (browser.runtime.onMessageExternal + externally_connectable),
+' а викликає його сторінка вебзастосунку — отже провайдер тут розширення.
+Overlay -down- IBridge
+Web -up-( IBridge
 
-component "Сервіс авторизації\nGoogle OAuth" <<зовнішня система>> as GoogleOAuth #F7EFE4
-component "Обʼєктне сховище\nфайлів (S3)" <<зовнішня система>> as S3 #F7EFE4
-component "Платіжна система" <<зовнішня система>> as PaySystem #F7EFE4
-component "Сервіс перекладу\nта словник" <<зовнішня система>> as DictAPI #F7EFE4
-component "Сервіс email-сповіщень" <<зовнішня система>> as MailGw #F7EFE4
+' ---- межа «клієнт — сервер» ----
+API -up- IApi
+Overlay -down-( IApi
+Web -down-( IApi
+API -up- IAuth
+Web -down-( IAuth
 
-' ======== СХОВИЩА ДАНИХ ========
-database "БД «Полиця»\n(PostgreSQL)" as DB
-database "Кеш і черга завдань\n(Redis)" as Cache
+' ---- усередині серверної частини ----
+Plans -up- ILimits
+API -down-( ILimits
+Learn -up- ILearn
+API -down-( ILearn
+Content -up- IContent
+API -down-( IContent
 
-' ====================================================================
-'  ЗʼЄДНАННЯ «ЛЬОДЯНИК-РОЗЕТКА» (ball-and-socket)
-'  Споживач --( Інтерфейс   — необхідний інтерфейс (розетка, півколо)
-'  Інтерфейс - Постачальник — наданий інтерфейс (льодяник, кружечок)
-' ====================================================================
+ExtLayer -up- IAI
+Learn -down-( IAI
+Content -down-( IAI
+ExtLayer -up- ITranslate
+Content -down-( ITranslate
+ExtLayer -up- IPay
+Plans -down-( IPay
+ExtLayer -up- IMail
+Plans -down-( IMail
+ExtLayer -up- IOAuth
+API -down-( IOAuth
 
-WebApp --( IPublicAPI
-IPublicAPI - Gateway
+DB -up- IStore
+API -down-( IStore
+Plans -down-( IStore
+Learn -down-( IStore
+Content -down-( IStore
 
-Gateway --( IAuth
-IAuth - Accounts
+'  ---- підказки компонувальнику (не елементи моделі) ----
+Reg -[hidden]right- Guest
+API -[hidden]down- Plans
+Plans -[hidden]down- ExtLayer
+Content -[hidden]right- Learn
 
-Gateway --( ICatalog
-ICatalog - Catalog
+' ===================== ЗАЛЕЖНОСТІ =====================
+YT ..> CloudYT : <<use>> timedtext (json3)
+ExtLayer ..> CloudAI : <<use>> HTTPS / REST
+ExtLayer ..> CloudPay : <<use>> HTTPS / вебхук
+ExtLayer ..> CloudOAuth : <<use>> OAuth 2.0, redirect-URI
+Learn ..> Content : <<use>> карта частот матеріалу
 
-Gateway --( ILibrary
-ILibrary - Library
+note left of YT
+  **Точка підстановки.** Адаптери інших
+  платформ, «власний файл .srt/.vtt»
+  і «розпізнане ШІ» надають той самий
+  IДжерелоСубтитрів; поза межами роботи.
+end note
 
-Gateway --( IIngest
-IIngest - Ingest
+note top of Guest
+  **Межа по автентифікації, а не по лімітах** — як у ЛР1.
+  Гість бачить лише вітрину й юридичні сторінки.
+  Абстрактний «Користувач сервісу» з ЛР1 свідомо
+  лишений без власних інтерфейсів; «Користувач
+  з підпискою» споживає ті самі три, що й зареєстрований.
+end note
 
-Gateway --( ISubscription
-ISubscription - Billing
-
-Gateway --( IModeration
-IModeration - Moderation
-
-Gateway --( ITranslate
-ITranslate - Translate
-
-Ingest --( IParser
-IParser - Parsers
-
-Accounts --( INotify
-Billing --( INotify
-Moderation --( INotify
-INotify - Notify
-
-Gateway --( ILog
-Ingest --( ILog
-Billing --( ILog
-ILog - Logging
-
-Library --( ICatalog
-Library --( IFileStore
-Ingest --( IModeration
-Ingest --( IFileStore
-Scheduler --( ISubscription
-
-Accounts --( IOAuth
-IOAuth - GoogleOAuth
-
-IFileStore - S3
-
-Billing --( IPayGw
-IPayGw - PaySystem
-
-' Єдиний інтерфейс, який надає НАША сторона, а потребує ЗОВНІШНЯ система:
-' асинхронне підтвердження списання (вебхук POST /api/payments/callback).
-IPayHook - Gateway
-PaySystem --( IPayHook
-
-Translate --( IDict
-IDict - DictAPI
-
-Notify --( IMail
-IMail - MailGw
-
-' ======== ЗАЛЕЖНОСТІ ВІД СХОВИЩ ДАНИХ (dependency) ========
-Accounts ..> DB : <<use>>
-Catalog ..> DB
-Library ..> DB
-Billing ..> DB
-Moderation ..> DB
-Accounts ..> Cache : <<use>>
-Ingest ..> Cache : <<use>>
-Notify ..> Cache
-Translate ..> Cache
-
-legend right
-  |= Позначення |= Зміст |
-  | суцільна лінія, що завершується кружечком | наданий інтерфейс (provided, «льодяник») |
-  | суцільна лінія, що завершується півколом навколо кружечка | необхідний інтерфейс (required, «розетка») |
-  | пунктирна стрілка | залежність (dependency) |
-  | бежева заливка компонента | зовнішня система (поза межами розробки) |
-  | блакитна заливка компонента | клієнтський рівень |
-  | зелений циліндр | сховище даних (БД, кеш) |
-endlegend
+note right of API
+  Контроль доступу: перевірка власника запису,
+  рівно один дозволений origin розширення
+  (chrome-extension://<id>), захист від CSRF.
+end note
 @enduml

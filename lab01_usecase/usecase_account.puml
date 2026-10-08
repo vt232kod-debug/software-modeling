@@ -1,0 +1,87 @@
+@startuml
+' Лабораторна робота №1. Тематична проєкція №2 головної діаграми варіантів використання:
+' «Акаунт, власні матеріали, словник і тариф».
+' Це не окрема модель, а фрагмент діаграми usecase.puml — усі елементи
+' і типи відношень узято з неї без змін.
+' UC07 показано сірим: він належить проєкції №1 і наведений тут
+' лише як ціль відношення <<include>> з UC17.
+' Камінський Олексій Дмитрович, група ВТ-23-2
+
+skinparam defaultFontName "Helvetica"
+skinparam shadowing false
+skinparam nodesep 16
+skinparam ranksep 80
+skinparam packageStyle rectangle
+skinparam ArrowFontSize 11
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #33668E
+}
+skinparam actor {
+  BorderColor #33668E
+}
+top to bottom direction
+
+actor "Користувач сервісу" as User <<абстрактний>>
+actor "Гість" as Guest
+actor "Зареєстрований\nкористувач" as Reg
+actor "Користувач\nз підпискою" as Sub
+actor "Адміністратор" as Admin
+User <|-- Guest
+User <|-- Reg
+Reg <|-- Sub
+
+rectangle "Сервіс «Півот» (фрагмент: доступ, матеріали, словник, тариф)" {
+  usecase "UC01\nЗареєструватися\nв сервісі" as UC01
+  usecase "UC02\nУвійти в сервіс" as UC02
+  usecase "UC02.1\nУвійти поштою\nабо паролем" as UC02a
+  usecase "UC02.2\nУвійти через\nзовнішній акаунт" as UC02b
+  usecase "UC03\nНалаштувати параметри\nвивчення" as UC03
+  usecase "UC12\nЗавантажити власний\nматеріал" as UC12
+  usecase "UC13\nЧитати власний текст\nу читалці" as UC13
+  usecase "UC14\nПрацювати зі словником\nза темами" as UC14
+  usecase "UC15\nРозкласти словник\nза темами" as UC15
+  usecase "UC16\nПройти сесію\nінтервальних повторень" as UC16
+  usecase "UC17\nПройти тест обсягу\nсловника" as UC17
+  usecase "UC18\nОформити й керувати\nпідпискою" as UC18
+  usecase "UC19\nПодивитися схожі\nслова" as UC19
+  usecase "UC20\nПризначити тариф вручну\n(поза production)" as UC20
+  usecase "UC07\nПозначити слово\nяк відоме" as UC07 #EEEEEE
+}
+
+actor "Поштовий сервіс" as Mail <<зовнішня система>>
+actor "Провайдер авторизації" as OAuth <<зовнішня система>>
+actor "Платіжний провайдер" as Pay <<зовнішня система>>
+actor "Сервіс ШІ" as Ai <<зовнішня система>>
+
+UC02 <|-- UC02a
+UC02 <|-- UC02b
+
+Guest -- UC01
+Reg -- UC02
+Reg -- UC03
+Reg -- UC12
+Reg -- UC13
+Reg -- UC14
+Reg -- UC16
+Reg -- UC17
+Reg -- UC18
+Sub -- UC15
+Sub -- UC19
+Admin -- UC20
+
+Mail -- UC01
+OAuth -- UC01
+Mail -- UC02a
+OAuth -- UC02b
+Pay -- UC18
+Mail -- UC18
+Ai -- UC15
+Ai -- UC19
+
+UC12 ..> UC13 : <<include>>
+UC17 ..> UC07 : <<include>>
+UC15 ..> UC14 : <<extend>>
+UC19 ..> UC14 : <<extend>>
+UC17 ..> UC02 : <<extend>>
+@enduml

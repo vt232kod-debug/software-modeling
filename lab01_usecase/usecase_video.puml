@@ -1,0 +1,71 @@
+@startuml
+' Лабораторна робота №1. Тематична проєкція №1 головної діаграми варіантів використання:
+' «Відео з двомовними субтитрами й робота зі словом».
+' Це не окрема модель, а фрагмент діаграми usecase.puml — усі елементи
+' і типи відношень узято з неї без змін.
+' Камінський Олексій Дмитрович, група ВТ-23-2
+
+skinparam defaultFontName "Helvetica"
+skinparam shadowing false
+skinparam nodesep 16
+skinparam ranksep 80
+skinparam packageStyle rectangle
+skinparam ArrowFontSize 11
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #33668E
+}
+skinparam actor {
+  BorderColor #33668E
+}
+top to bottom direction
+
+actor "Зареєстрований\nкористувач" as Reg
+actor "Користувач\nз підпискою" as Sub
+Reg <|-- Sub
+
+rectangle "Сервіс «Півот» (фрагмент: перегляд відео та картка слова)" {
+  usecase "UC04\nДивитися відео з\nдвомовними субтитрами" as UC04
+  usecase "UC05\nОтримати значення\nслова" as UC05
+  usecase "UC06\nЗберегти слово\nу словник" as UC06
+  usecase "UC07\nПозначити слово\nяк відоме" as UC07
+  usecase "UC08\nОтримати пояснення\nслова в контексті" as UC08
+  usecase "UC09\nРозібрати будову\nречення" as UC09
+  usecase "UC10\nЗамовити розпізнавання\nмовлення для відео" as UC10
+  usecase "UC11\nОтримати переказ\nматеріалу" as UC11
+}
+
+actor "Сервіс субтитрів\nYouTube" as YT <<зовнішня система>>
+actor "Сервіс перекладу" as Tr <<зовнішня система>>
+actor "Сервіс ШІ" as Ai <<зовнішня система>>
+
+Reg -- UC04
+Reg -- UC05
+Reg -- UC06
+Reg -- UC07
+Reg -- UC08
+Sub -- UC09
+Sub -- UC10
+Sub -- UC11
+
+YT -- UC04
+Tr -- UC04
+Tr -- UC05
+Ai -- UC08
+Ai -- UC09
+Ai -- UC10
+Ai -- UC11
+
+UC06 ..> UC05 : <<extend>>
+UC07 ..> UC05 : <<extend>>
+UC08 ..> UC05 : <<extend>>
+UC09 ..> UC04 : <<extend>>
+UC10 ..> UC04 : <<extend>>
+UC10 ..> UC11 : <<extend>>
+
+note bottom of UC04
+  Доріжку субтитрів віддає інтерфейс ДжерелоСубтитрів.
+  У межах роботи реалізовано лише YouTube; інші площадки —
+  точка підстановки поза межами роботи.
+end note
+@enduml
