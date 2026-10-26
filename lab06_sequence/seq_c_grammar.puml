@@ -1,0 +1,137 @@
+@startuml
+' =====================================================================
+' Лабораторна робота №6. Діаграма послідовності. СЦЕНАРІЙ В
+' UC09 «Розібрати будову речення» (ЛР1) — пояснення граматики
+' зовнішнім сервісом ШІ з перевіркою денного ліміту безкоштовного
+' тарифу й кешуванням відповіді у спільному довіднику.
+' Камінський Олексій Дмитрович, група ВТ-23-2
+' =====================================================================
+
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam ArrowFontSize 12
+skinparam maxMessageSize 180
+skinparam LifelineStrategy solid
+skinparam sequence {
+  ParticipantBackgroundColor #FEFEFE
+  ParticipantBorderColor #33668E
+  ParticipantFontSize 12
+  ActorBackgroundColor #FEFEFE
+  ActorBorderColor #33668E
+  ArrowColor #33668E
+  LifeLineBorderColor #9AB3C6
+  GroupBackgroundColor #EDF3F8
+  GroupBorderColor #33668E
+  GroupHeaderFontSize 12
+  DividerBackgroundColor #F7FAFC
+  DividerBorderColor #9AB3C6
+}
+skinparam note {
+  BackgroundColor #FFFDF2
+  BorderColor #C9B47A
+  FontSize 11
+}
+skinparam legend {
+  BackgroundColor #FFFDF2
+  BorderColor #C9B47A
+  FontSize 11
+}
+
+' Нижні рамки учасників прибрано — так само, як в інших діаграмах комплекту.
+hide footbox
+
+title Сценарій В. UC09: розібрати будову речення зовнішнім сервісом ШІ\nІніціатор — Користувач з підпискою. Межі: від кліку по реченню до показу розбору або відмови за лімітом
+
+actor "Користувач\nз підпискою" as U
+participant "оверлей :\nОверлей розширення\n(компонент 1 ЛР3)" as OV
+participant "api :\nAPI сервісу та\nконтроль доступу\n(компонент 4 ЛР3)" as API
+participant "тарифи :\nТарифи й ліміти\n(компонент 5 ЛР3)" as PLN
+participant "лічильник :\nЛічильникВикористання" as LIM
+participant "навчання :\nМодуль навчання\n(компонент 6 ЛР3)" as LRN
+participant "кеш :\nКешПояснень" as CEX
+participant "інтеграції :\nШар зовнішніх сервісів\n(компонент 8 ЛР3)" as EXT
+participant "Сервіс ШІ\n<<зовнішня система>>" as AI
+
+== Перевірка денного ліміту ==
+
+U -> OV : клікнути речення в репліці субтитрів
+activate OV
+OV -> API : розібратиБудовуРечення(речення, параМов)
+activate API
+API -> PLN : залишок(тариф)
+activate PLN
+PLN -> LIM : залишок(тариф)
+activate LIM
+LIM -> LIM : скиданняЧерез()
+LIM --> LIM : час до скидання лічильника
+LIM --> PLN : залишок, час до скидання
+deactivate LIM
+PLN --> API : залишок, час до скидання
+deactivate PLN
+
+alt залишок = 0, денний ліміт розборів вичерпано
+  API --> OV : відмова: ліміт вичерпано, залишок і час до скидання
+  OV --> U : показати залишок і пропозицію оформити підписку (UC18)
+
+else залишок > 0
+  API -> LRN : пояснитиБудову(речення, параМов)
+  activate LRN
+  LRN -> CEX : знайти(ключ)
+  activate CEX
+  CEX -> CEX : застарілий()
+  CEX --> CEX : ознака застарілості відповіді
+  CEX --> LRN : відповідь : JSON (можливо, порожньо)
+  deactivate CEX
+
+  alt пояснення є в спільному кеші й не застаріле
+    LRN --> API : розбір речення (джерело: спільний кеш)
+  else кеша немає або відповідь застаріла
+    LRN -> EXT : запроситиРозбір(речення, параМов)
+    activate EXT
+    EXT ->> AI : запит на розбір будови речення
+    activate AI
+    AI ->> EXT : розбір(JSON)
+    deactivate AI
+    EXT --> LRN : розбір(JSON), постачальник
+    deactivate EXT
+    LRN -> CEX : зберегти(ключ, відповідь)
+    activate CEX
+    CEX --> LRN : відповідь збережено у спільний кеш
+    deactivate CEX
+    LRN --> API : розбір речення (джерело: Сервіс ШІ)
+  end
+  deactivate LRN
+
+  opt розбір отримано від Сервісу ШІ, а не зі спільного кеша
+    API ->> PLN : списати(1)
+    activate PLN
+    PLN -> LIM : списати(1)
+    activate LIM
+    LIM --> PLN : лічильник зменшено
+    deactivate LIM
+    deactivate PLN
+  end
+
+  API --> OV : розбір будови речення
+  OV --> U : показати члени речення, час, конструкції
+end
+deactivate API
+deactivate OV
+
+note over LIM #FFFDF2
+  Денний ліміт **списується лише тоді**, коли звернення до
+  зовнішнього сервісу справді відбулося: влучання у спільний
+  кеш нічого не коштує сервісу й нічого не знімає з користувача.
+  Саме тому списання винесено в окремий фрагмент opt
+  **після** фрагмента alt, а не всередину його гілки.
+end note
+
+legend bottom
+Умовні позначення ті самі, що й у сценарії А. Виклик до зовнішнього сервісу ШІ показано асинхронним
+(відкрите вістря) в обидва боки: шар зовнішніх сервісів не блокується на відповіді моделі, час якої
+непередбачуваний. Усі решта викликів синхронні й мають парні повернення. Самовиклики
+`ЛічильникВикористання.скиданняЧерез()` і `КешПояснень.застарілий()` — методи з діаграми класів ЛР2.
+end legend
+
+@enduml
